@@ -50,7 +50,7 @@ p.resetDebugVisualizerCamera(
 )
 
 # ✅ joint&slider
-controlled_joints = [0, 1, 3, 4, 5]
+controlled_joints = [0, 1, 2, 3,5,6]
 sliders = {}
 for joint_id in controlled_joints:
     if joint_id not in [0, 1]:  # joint 0, 1 controlled by tilt
@@ -59,8 +59,13 @@ for joint_id in controlled_joints:
         p.changeDynamics(pandaUid, joint_id, linearDamping=0.04, angularDamping=0.04)
 
 # ✅ tilt sensitivity & init gripper status
-gain = 2.0
+gain = 3.0
 grip_val = 0.04  # base: open
+
+#
+
+# ✅ store initial tilt before simulation loop
+fingers, initial_pitch, initial_roll = read_glove_data()
 
 # ✅ simulation loop
 while True:
@@ -69,25 +74,25 @@ while True:
 
     fingers, pitch, roll = read_glove_data()
 
+    # ✅ calculate relative tilt
+    relative_pitch = pitch - initial_pitch
+    relative_roll = roll - initial_roll
+
     #  # === Control gripper (fingers 1~4, responds when all fingers are extended or all are bent)
-    if all(fingers[i] <= 50 for i in range(4)):
+    if all(fingers[i] >= 50 for i in range(4)):
         grip_val = 0.0  # close
-    elif all(fingers[i] > 50 for i in range(4)):
+    elif all(fingers[i] < 50 for i in range(4)):
         grip_val = 0.04  # open
 
     p.setJointMotorControl2(pandaUid, 9, p.POSITION_CONTROL, grip_val, force=10)
     p.setJointMotorControl2(pandaUid, 10, p.POSITION_CONTROL, grip_val, force=10)
 
-    # === only second finger extended → only joint 4 contoll by slider
+    # === only second finger extended → only joint 4 controlled by slider
     if fingers[1] < 50 and all(fingers[i] >= 50 for i in [0, 2, 3]):
-        target = p.readUserDebugParameter(sliders[4])
-        current = p.getJointState(pandaUid, 4)[0]
-        interp = (1 - 0.2) * current + 0.2 * target
-        p.resetJointState(pandaUid, 4, interp)
-    else:
-        # === basic: joint 0, 1 contolled with tilt
-        pitch_rad = max(min(pitch / 30.0 * gain, 1.5), -1.5)
-        roll_rad  = max(min(roll  / 30.0 * gain, 1.5), -1.5)
+        
+        # === basic: joint 0, 1 controlled with relative tilt
+        pitch_rad = max(min(relative_pitch / 30.0 * gain, 15), -15) # rotate
+        roll_rad  = max(min(relative_roll  / 30.0 * gain, 1.5), -1.5)
 
         current_0 = p.getJointState(pandaUid, 0)[0]
         current_1 = p.getJointState(pandaUid, 1)[0]
@@ -97,10 +102,40 @@ while True:
 
         p.resetJointState(pandaUid, 0, new_0)
         p.resetJointState(pandaUid, 1, new_1)
+        
+    elif fingers[1] < 50 and fingers[2] < 50 and all(fingers[i] >= 50 for i in [0, 3]):
+        
+        # === basic: joint 0, 1 controlled with relative tilt
+        pitch_rad = max(min(relative_pitch / 30.0 * gain, 15), -15) # rotate
+        roll_rad  = max(min(relative_roll  / 30.0 * gain, 1.5), -1.5)
 
-    # === slider controll for joint 3, 5 
-    for joint_id in [3, 5]:
-        target = p.readUserDebugParameter(sliders[joint_id])
-        current = p.getJointState(pandaUid, joint_id)[0]
-        interp = (1 - 0.2) * current + 0.2 * target
-        p.resetJointState(pandaUid, joint_id, interp)
+        current_2 = p.getJointState(pandaUid, 2)[0]
+        current_3 = p.getJointState(pandaUid, 3)[0]
+
+        new_2 = (1 - 0.2) * current_2 + 0.2 * pitch_rad
+        new_3 = (1 - 0.2) * current_3 + 0.2 * roll_rad
+
+        p.resetJointState(pandaUid, 2, new_2)
+        p.resetJointState(pandaUid, 3, new_3)
+        
+    else:
+        
+        # === basic: joint 0, 1 controlled with relative tilt
+        pitch_rad = max(min(relative_pitch / 30.0 * gain, 15), -15) # rotate
+        roll_rad  = max(min(relative_roll  / 30.0 * gain, 10), -10)
+
+        current_5 = p.getJointState(pandaUid, 5)[0]
+        current_6 = p.getJointState(pandaUid, 6)[0]
+
+        new_6 = (1 - 0.2) * current_6 + 0.2 * pitch_rad
+        new_5 = (1 - 0.2) * current_5 + 0.2 * roll_rad
+
+        p.resetJointState(pandaUid, 5, new_5)
+        p.resetJointState(pandaUid, 6, new_6)
+        
+'''
+    # === 뻐큐하면 꺼짐
+    if fingers[2] < 50 and all(fingers[i] >= 50 for i in [0,1, 3]):
+        print("✅ 종료 제스처 인식됨. 시뮬레이션 종료.")
+        break
+'''
