@@ -2,11 +2,11 @@ import socket
 import serial
 import time
 
-# === 글로브 연결 ===
+# === connect glove ===
 ser = serial.Serial('COM5', 115200, timeout=1)
 time.sleep(2)
 
-# === 소켓 클라이언트 세팅 ===
+# === socket client setting ===
 server_ip = '127.0.0.1' #'10.136.96.1'  # ex) 192.168.1.5
 server_port = 9999
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
