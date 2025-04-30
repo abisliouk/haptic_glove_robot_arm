@@ -1,4 +1,4 @@
-![Project Banner](demo/Project banner.jpeg)
+<img width="689" alt="Project Banner" src="https://github.com/abisliouk/haptic_glove_robot_arm/blob/main/demo/Project%20banner.jpeg">
 
 # Haptic Glove to Simulated Robot Arm Interface
 
