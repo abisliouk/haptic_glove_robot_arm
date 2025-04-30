@@ -1,3 +1,5 @@
+![Project Banner](demo/Project banner.jpeg)
+
 # Haptic Glove to Simulated Robot Arm Interface
 
 ## Project Summary
