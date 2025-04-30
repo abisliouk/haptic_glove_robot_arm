@@ -1,3 +1,7 @@
+# This script reads data from a glove connected via serial and sends it to a server over Wi-Fi.
+# This is useful for testing the glove's functionality and ensuring that it can communicate
+# with a server without needing to be connected to a robot arm.
+
 import socket
 import serial
 import time

@@ -1,3 +1,9 @@
+# This script receives glove data from a socket connection and publishes it to a ROS 2 topic.
+# It is designed to work with the haptic glove hardware, which sends data over a TCP socket.
+# The glove data includes finger positions and tilt angles, which are parsed and published
+# to the 'glove_data' topic. The script uses a timer to periodically check for incoming data
+# and publish it. The socket connection is established on a specified IP address and port.
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -43,40 +49,3 @@ def main(args=None):
         node.sock.close()
         node.destroy_node()
         rclpy.shutdown()
-
-
-# MOCKED GLOVE DATA PUBLISHER
-
-# import rclpy
-# from rclpy.node import Node
-# from std_msgs.msg import String
-# import random
-# import time
-
-# class GlovePublisher(Node):
-#     def __init__(self):
-#         super().__init__('glove_publisher')
-#         self.publisher_ = self.create_publisher(String, 'glove_data', 10)
-#         self.timer = self.create_timer(0.1, self.timer_callback)  # 10 Hz
-
-#     def timer_callback(self):
-#         # Mocked glove data
-#         fingers = [random.randint(0, 100) for _ in range(5)]
-#         pitch = random.uniform(-30.0, 30.0)
-#         roll = random.uniform(-30.0, 30.0)
-
-#         # Format the data as a string similar to the glove's output
-#         finger_data = ",".join([f"{i+1}:{fingers[i]}" for i in range(5)])
-#         tilt_data = f"{pitch:.2f},{roll:.2f}"
-#         mocked_data = f"FINGER:{finger_data}|TILT:{tilt_data}"
-
-#         # Publish the mocked data
-#         self.publisher_.publish(String(data=mocked_data))
-#         self.get_logger().info(f'Published Mocked Data: {mocked_data}')
-
-# def main(args=None):
-#     rclpy.init(args=args)
-#     node = GlovePublisher()
-#     rclpy.spin(node)
-#     node.destroy_node()
-#     rclpy.shutdown()

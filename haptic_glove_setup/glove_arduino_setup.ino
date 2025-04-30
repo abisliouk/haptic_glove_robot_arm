@@ -1,3 +1,6 @@
+// This script is used to read the flex sensors and the MPU6050 accelerometer
+// and send the data to the computer via serial.
+
 #include <Wire.h>
 #include <MPU6050.h>
 
@@ -5,9 +8,9 @@ MPU6050 mpu;
 
 const int pins[5] = {A0, A1, A2, A3, A4};
 
-// 이 값은 직접 보정해야 함 (센서 min/max 값)
-const int minVals[5] = {200, 210, 220, 230, 240}; // 손가락 완전히 편 값
-const int maxVals[5] = {800, 810, 820, 830, 840}; // 손가락 완전히 접은 값
+// This value must be calibrated manually (sensor min/max value)
+const int minVals[5] = {200, 210, 220, 230, 240}; // Finger fully extended
+const int maxVals[5] = {800, 810, 820, 830, 840}; // Finger fully folded value
 
 const int tiltThreshold = 20;
 

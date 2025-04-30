@@ -1,3 +1,7 @@
+# This script is a ROS 2 node that subscribes to glove data and controls a robotic arm in a PyBullet simulation.
+# It uses the PyBullet physics engine to simulate the arm and an object, and it applies forces to the arm's joints based on the glove data.
+# The glove data includes finger positions and tilt angles, which are parsed and used to control the arm's movements.
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
