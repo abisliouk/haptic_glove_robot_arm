@@ -1,122 +1,189 @@
-# Interfacing Haptic Glove and Simulated Robotic Arm
+# Haptic Glove to Simulated Robot Arm Interface
 
-## Project Overview
-This project is part of the **EEL 5934 - Autonomous Robots** course at the University of Florida. Our goal is to interface a **Hiwonder Wireless Glove** with a simulated **Hiwonder MaxArm Robot Arm** in **PyBullet** using ROS 2. The glove serves as an input device to manipulate the simulated robot arm via ROS 2 nodes.
+## Project Summary
+
+This project enables **real-time teleoperation** of a simulated robotic arm using a **haptic glove**. The glove transmits spatial and finger position data over **Wi-Fi**, which is consumed by a **ROS 2 node** that controls a **simulated robot arm in PyBullet**. The architecture supports full simulation, testing on a single PC without ROS, or mocking the glove input.
+
+---
 
 ## Team Members
-- **Artem Bisliouk**
 - **Seonbeom Kim**
+- **Artem Bisliouk**
 - **Yongkyoon Park**
 - **Byeongkwan Jeon**
 
-## Hardware and Simulation
-- **Hiwonder Wireless Glove** (connected via USB)
-- **Hiwonder MaxArm Robot Arm** (simulated in PyBullet due to hardware malfunction)
-- Full ROS 2-based integration for real-time communication between the glove and the robot arm.
+---
 
-## Project Goal
-- Use glove inputs to control the simulated robot arm in real time.
-- Translate gestures (e.g., hand movement, flex sensors) into robot joint commands.
-- Ensure bidirectional communication using custom ROS 2 nodes.
 
-## Project Structure
+## 🗂️ Repository Structure
+
 ```
-ros2_ws/
-├── src/
-│   ├── haptic_glove_robot_arm/     # ROS 2 package for glove and arm integration
-│       ├── glove_publisher.py      # Publishes glove sensor data
-│       ├── arm_subscriber.py       # Subscribes to glove data and controls the robot arm
-│       ├── package.xml             # ROS 2 package metadata
-│       ├── setup.py                # Python package setup
+haptic_glove_robot_arm/
+├── haptic_glove_robot_arm/          # ROS 2 package (main integration)
+│   ├── glove_publisher.py           # ROS node: receives glove data via socket, publishes to /glove_data
+│   ├── arm_subscriber.py           # ROS node: subscribes to /glove_data, simulates arm in PyBullet
+│
+├── haptic_glove_robot_arm_mock/     # Standalone scripts (no ROS)
+│   ├── glove_arm_simulator_no_ros.py # Direct glove-to-arm simulation via serial
+│   ├── glove_publisher_mock.py      # Mock publisher node for testing without hardware
+│
+├── haptic_glove_setup/              # Setup scripts for glove device
+│   ├── glove_arduino_setup.ino      # Arduino firmware for glove
+│   ├── glove_data_wifi_transition.py # Reads serial glove data, sends to ROS node over Wi-Fi
+│
+├── test/                            # Code quality tests
+├── demo/                            # Folder with the banner of the project and a demo
+├── resource/, LICENSE, setup.py, etc.
 ```
 
-## ROS 2 Implementation
+---
 
-### 1. Glove Publisher Node
-- **File**: `glove_publisher.py`
-- **Functionality**: Reads glove sensor data over USB serial and publishes it to the `/glove_data` topic.
-- **Topic**: `/glove_data` (type: `std_msgs/String`)
+## ⚙️ System Architecture & Workflow
 
-### 2. Arm Subscriber Node
-- **File**: `arm_subscriber.py`
-- **Functionality**: Subscribes to `/glove_data`, parses the data, and controls the robot arm in PyBullet.
-- **Topic**: `/glove_data` (type: `std_msgs/String`)
+### 🧪 Option A: Full System (Two PCs)
+1. **PC 1** (USB-Glove connected):
+   - Flash glove with `glove_arduino_setup.ino`
+   - Run `glove_data_wifi_transition.py` to send glove data over Wi-Fi
 
-### 3. PyBullet Simulation
-- The robot arm is simulated in PyBullet.
-- The glove data is used to control the arm's joints and gripper in real time.
+2. **PC 2** (ROS 2 system):
+   - Start `glove_publisher.py` to receive glove data over socket and publish to `/glove_data`
+   - Start `arm_subscriber.py` to control the simulated robot arm via PyBullet
 
-## Installation and Setup
+---
 
-### Prerequisites
-- ROS 2 (preferably Humble or Iron)
-- Python 3.8+ with `pyserial` and `pybullet` installed
-- A working ROS 2 workspace (`ros2_ws`)
+### 🔬 Option B: Standalone Simulation (One PC, no ROS)
+- Run `glove_arm_simulator_no_ros.py`
+- Reads glove data from serial, directly controls simulated robot arm
 
-### Steps
-1. **Clone the Repository**:
-   ```bash
-   cd ~/ros2_ws/src
-   git clone <repository_url> haptic_glove_robot_arm
-   ```
+---
 
-2. **Install Dependencies**:
-   Ensure you have the required Python libraries:
-   ```bash
-   pip install pyserial pybullet
-   ```
+### 🧪 Option C: Mocked Simulation (ROS + Mock)
+- Replace glove input by launching:
+  - `glove_publisher_mock.py` (simulates glove data)
+  - `arm_subscriber.py` as usual
 
-3. **Build the Package**:
-   Navigate to your ROS 2 workspace and build the package:
-   ```bash
-   cd ~/ros2_ws
-   colcon build
-   source install/setup.bash
-   ```
+---
 
-4. **Run the Nodes**:
-   Open two terminals and run the following commands:
+## 🧰 Hardware
 
-   - **Terminal 1**: Start the glove publisher node:
-     ```bash
-     ros2 run haptic_glove_robot_arm glove_publisher
-     ```
+### 1. **Hiwonder Wireless Glove**
+- Used for capturing **finger flex** and **tilt orientation** (pitch, roll)
+- Connected via **USB serial** to the first PC (setup device)
+- Flashed with `glove_arduino_setup.ino` to stream data in structured format
+- Transmits data to another PC over Wi-Fi using `glove_data_wifi_transition.py`
 
-   - **Terminal 2**: Start the arm subscriber node:
-     ```bash
-     ros2 run haptic_glove_robot_arm arm_subscriber
-     ```
+### 2. **PC 1 – Glove Interface Host**
+- Must support USB serial communication (e.g., `/dev/ttyUSB0` or `COM5`)
+- Runs the glove setup and Wi-Fi forwarding script
+- Sends sensor data to PC 2 over TCP/IP
 
-5. **Verify the Simulation**:
-   - The PyBullet GUI should open, showing the simulated robot arm.
-   - Move the glove to see the robot arm respond in real time.
+### 3. **PC 2 – Simulation Host**
+- Must have **ROS 2 (Humble)** and **PyBullet** installed
+- Receives data from PC 1 and publishes it via `glove_publisher.py`
+- Subscribes and visualizes behavior via `arm_subscriber.py` using the **Franka Panda** model in PyBullet
 
-## Testing and Debugging
+### 4. **(Optional) Single-PC Setup**
+- If using `glove_arm_simulator_no_ros.py`, only one PC is needed that supports USB serial input and runs PyBullet
+- Suitable for testing glove response without ROS
 
-### Debugging Glove Data
-- Use `ros2 topic echo` to verify the glove data being published:
-  ```bash
-  ros2 topic echo /glove_data
-  ```
+## 🛠️ Installation & Setup
 
-### Visualizing Joint States
-- Use the PyBullet GUI to observe joint movements and gripper actions.
+### 1. Clone the Repo
+```bash
+cd ~/ros2_ws/src
+git clone <your_repo_url> haptic_glove_robot_arm
+```
+where `ros2_ws` is your set up ros2 workspace
 
-### Adjusting Parameters
-- Modify the `gain` or other parameters in `arm_subscriber.py` to fine-tune the robot's responsiveness.
+### 2. Install Dependencies
+```bash
+sudo apt update
+sudo apt install ros-humble-rclpy python3-pybullet python3-serial
+pip install pybullet pyserial
+```
 
-## Future Enhancements
-- Add gesture recognition (e.g., fist = reset arm position).
-- Implement a feedback loop to adjust motion based on real-time simulation.
-- Integrate with Gazebo for a more realistic simulation environment.
+### 3. Build the ROS Package
+```bash
+cd ~/ros2_ws
+colcon build
+source install/setup.bash
+```
 
-## Requirements
-- ROS 2 (Humble or Iron)
-- Python 3.8+ with `pyserial` and `pybullet`
-- A USB connection for the Hiwonder Wireless Glove
+---
 
-## Resources
-- [Hiwonder Wireless Glove](https://www.hiwonder.com/products/wireless-glove-open-source-somatosensory-mechanical-glove?variant=40936077590615)
-- [Hiwonder MaxArm](https://www.hiwonder.com/products/maxarm?variant=40008714092631)
-- [ROS 2 Documentation](https://docs.ros.org/en/rolling/index.html)
-- [PyBullet Documentation](https://pybullet.org/wordpress/)
+## 🚀 How to Run
+
+### Option A: Two-PC Glove-to-Robot Pipeline
+
+**PC 1 – Glove Serial to Wi-Fi**
+```bash
+cd haptic_glove_setup
+python3 glove_data_wifi_transition.py
+```
+
+**PC 2 – ROS Receiver**
+```bash
+# Terminal 1
+ros2 run haptic_glove_robot_arm glove_publisher
+
+# Terminal 2
+ros2 run haptic_glove_robot_arm arm_subscriber
+```
+
+---
+
+### Option B: Run Entire Simulation on One PC (No ROS)
+```bash
+python3 haptic_glove_robot_arm_mock/glove_arm_simulator_no_ros.py
+```
+
+---
+
+### Option C: Run ROS Simulation with Mocked Glove
+```bash
+# Terminal 1
+ros2 run haptic_glove_robot_arm_mock glove_publisher_mock
+
+# Terminal 2
+ros2 run haptic_glove_robot_arm arm_subscriber
+```
+
+---
+
+## 📡 Communication Flow
+
+1. `glove_data_wifi_transition.py` reads serial → sends over TCP socket
+2. `glove_publisher.py` accepts socket → publishes `/glove_data`
+3. `arm_subscriber.py` subscribes → moves robot joints in PyBullet
+
+---
+
+## 🧪 Testing
+
+### View Published Glove Data
+```bash
+ros2 topic echo /glove_data
+```
+
+### Adjust Gripper Logic
+- Tune `grip_val` and `gain` in `arm_subscriber.py` for desired responsiveness
+
+---
+
+## 📌 Notes
+- Ensure both PCs are on the same network
+- Serial port (e.g., `COM5`) must match your system
+- You can extend to more fingers, gestures, or IMU feedback with minor edits
+
+---
+
+## 🔗 Resources
+- [Hiwonder Wireless Glove](https://www.hiwonder.com/products/wireless-glove-open-source-somatosensory-mechanical-glove)
+- [PyBullet Docs](https://pybullet.org/)
+- [ROS 2 Humble](https://docs.ros.org/en/humble/)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
