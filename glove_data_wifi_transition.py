@@ -15,9 +15,9 @@ client_socket.connect((server_ip, server_port))
 try:
     while True:
         line = ser.readline().decode().strip()
-        if line:  # 받은 줄이 비어있지 않으면
+        if line:  
             print(f"Sending: {line}")
-            client_socket.sendall(line.encode() + b'\n')  # 줄 단위로 보내기
+            client_socket.sendall(line.encode() + b'\n') 
         time.sleep(0.05)
 
 except KeyboardInterrupt:
